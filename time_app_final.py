@@ -231,19 +231,104 @@ else:
     for q, a in faq_dict.items():
         st.markdown(f"<div class='faq-box'><b>Q:</b> {q}<br><b>A:</b> {a}</div>", unsafe_allow_html=True)
 
-# Optional: Simple Chatbot
-st.subheader("💬 Ask the Project Chatbot")
-user_q = st.text_input("Ask anything about the analysis or time series (project-specific):", key="chatbot")
-if user_q:
-    # Very basic: match to FAQ, or generic answer
-    response = None
-    for q, a in faq_dict.items():
-        if user_q.lower() in q.lower() or user_q.lower() in a.lower():
-            response = a
-            break
-    if not response:
-        response = "I'm a basic FAQ bot—please rephrase or ask a common time series or project question."
-    st.success(response)
+import streamlit as st
+import google.generativeai as genai
+import pdfplumber
+import nbformat
+import pandas as pd
 
-# ================== END ====================
+# === Functions to Extract Context ===
+
+def extract_text_from_pdf(pdf_path, max_chars=2000):
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            text = ''.join([page.extract_text() or '' for page in pdf.pages])
+        return text[:max_chars]
+    except Exception as e:
+        return f"Error reading PDF: {e}"
+
+def extract_text_from_notebook(nb_path, max_chars=1000):
+    try:
+        with open(nb_path, "r", encoding="utf-8") as f:
+            nb = nbformat.read(f, as_version=4)
+        text = ''
+        for cell in nb.cells:
+            if cell.cell_type == 'markdown':
+                text += cell.source + '\n'
+            elif cell.cell_type == 'code':
+                text += f"[Code cell]: {cell.source[:100]}...\n"
+        return text[:max_chars]
+    except Exception as e:
+        return f"Error reading notebook: {e}"
+
+def extract_data_summary(csv_path, max_rows=3):
+    try:
+        df = pd.read_csv(csv_path)
+        summary = []
+        summary.append(f"Columns: {list(df.columns)}")
+        summary.append(f"Shape: {df.shape[0]} rows x {df.shape[1]} columns")
+        summary.append(f"Sample data:\n{df.head(max_rows).to_string(index=False)}")
+        for col in df.select_dtypes(include='number').columns:
+            summary.append(f"Stats for '{col}': min={df[col].min()}, max={df[col].max()}, mean={df[col].mean():.2f}")
+        if 'Date' in df.columns:
+            summary.append(f"Date range: {df['Date'].min()} to {df['Date'].max()}")
+        if 'Store' in df.columns:
+            summary.append(f"Number of unique stores: {df['Store'].nunique()}")
+        return "\n".join(summary)
+    except Exception as e:
+        return f"Error extracting data summary: {e}"
+
+# === Streamlit UI ===
+
+st.markdown("---")
+st.header("🔎 Advanced: Ask Anything About This Project (Gemini Chatbot)")
+
+# API key input (for local or use st.secrets for deployment)
+api_key = st.secrets["gemini_api_key"] if "gemini_api_key" in st.secrets else st.text_input("Enter your Gemini API Key:", type="password")
+
+if api_key:
+    genai.configure(api_key=api_key)
+
+    # Load all context sources
+    pdf_text = extract_text_from_pdf("Project - Walmart Time series analysis - Research Report.pdf", max_chars=2000)
+    nb_text = extract_text_from_notebook("Project_Walmart_time_series_analysis.ipynb", max_chars=1000)
+    data_text = extract_data_summary("walmart_cleaned.csv", max_rows=3)
+
+    context = f"""
+PROJECT REPORT:
+{pdf_text}
+
+NOTEBOOK SUMMARY:
+{nb_text}
+
+DATA SUMMARY:
+{data_text}
+"""
+    st.write("The chatbot uses your project report, notebook, and a summary of your data to answer questions.")
+
+    user_q = st.text_area("Ask a question about the project or data:")
+
+    if st.button("Ask Gemini"):
+        if not user_q.strip():
+            st.warning("Please type your question.")
+        else:
+            prompt = f"""You are a helpful data science project expert. Use ONLY the information in the following project context to answer the user's question. If asked about data, respond using the 'DATA SUMMARY' section.
+
+PROJECT CONTEXT:
+{context}
+
+QUESTION:
+{user_q}
+
+ANSWER:
+"""
+            with st.spinner("Gemini is thinking..."):
+                try:
+                    model = genai.GenerativeModel('gemini-pro')
+                    response = model.generate_content(prompt)
+                    st.success(response.text)
+                except Exception as e:
+                    st.error(f"Gemini API error: {e}")
+else:
+    st.info("Please enter your Gemini API key to use the chatbot.")
 
