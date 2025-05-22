@@ -324,7 +324,7 @@ ANSWER:
 """
             with st.spinner("Gemini is thinking..."):
                 try:
-                    model = genai.GenerativeModel('gemini-pro')
+                    model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
                     response = model.generate_content(prompt)
                     st.success(response.text)
                 except Exception as e:
