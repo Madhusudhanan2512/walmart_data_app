@@ -236,7 +236,6 @@ import google.generativeai as genai
 import pdfplumber
 import nbformat
 import pandas as pd
-pip install --upgrade google-generativeai
 
 
 # === Functions to Extract Context ===
