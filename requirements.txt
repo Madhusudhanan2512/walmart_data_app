@@ -4,6 +4,9 @@ pandas
 numpy
 plotly
 statsmodels
+pdfplumber
+google-generativeai
+
 
 # Time series modeling
 prophet
@@ -14,9 +17,6 @@ scipy
 # Image and notebook handling
 pillow
 nbformat
-
-# For interactive search/chat (no external LLM)
-# (no extra packages required, uses core Python)
 
 # Optional: for exporting plots to image in Jupyter (if you want to use .svg or .png)
 matplotlib
