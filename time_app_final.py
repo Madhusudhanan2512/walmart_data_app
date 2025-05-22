@@ -236,6 +236,8 @@ import google.generativeai as genai
 import pdfplumber
 import nbformat
 import pandas as pd
+pip install --upgrade google-generativeai
+
 
 # === Functions to Extract Context ===
 
@@ -324,7 +326,7 @@ ANSWER:
 """
             with st.spinner("Gemini is thinking..."):
                 try:
-                    model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
+                    model = genai.GenerativeModel("models/gemini-1.5-pro-002")
                     response = model.generate_content(prompt)
                     st.success(response.text)
                 except Exception as e:
