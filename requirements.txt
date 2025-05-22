@@ -3,6 +3,7 @@ streamlit
 pandas
 numpy
 plotly
+statsmodels
 
 # Time series modeling
 prophet
