@@ -13,7 +13,7 @@ st.markdown(
     f"""
     <style>
     .stApp {{
-        background-image: url("image.png");
+        background-image: url("background.png");
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
