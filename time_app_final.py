@@ -279,57 +279,6 @@ def extract_data_summary(csv_path, max_rows=3):
     except Exception as e:
         return f"Error extracting data summary: {e}"
 
-# === Streamlit UI ===
 
-st.markdown("---")
-st.header("🔎 Advanced: Ask Anything About This Project (Gemini Chatbot)")
 
-# API key input (for local or use st.secrets for deployment)
-api_key = st.secrets["gemini_api_key"] if "gemini_api_key" in st.secrets else st.text_input("Enter your Gemini API Key:", type="password")
-
-if api_key:
-    genai.configure(api_key=api_key)
-
-    # Load all context sources
-    pdf_text = extract_text_from_pdf("Project - Walmart Time series analysis - Research Report.pdf", max_chars=2000)
-    nb_text = extract_text_from_notebook("Project_Walmart_time_series_analysis.ipynb", max_chars=1000)
-    data_text = extract_data_summary("walmart_cleaned.csv", max_rows=3)
-
-    context = f"""
-PROJECT REPORT:
-{pdf_text}
-
-NOTEBOOK SUMMARY:
-{nb_text}
-
-DATA SUMMARY:
-{data_text}
-"""
-    st.write("The chatbot uses your project report, notebook, and a summary of your data to answer questions.")
-
-    user_q = st.text_area("Ask a question about the project or data:")
-
-    if st.button("Ask Gemini"):
-        if not user_q.strip():
-            st.warning("Please type your question.")
-        else:
-            prompt = f"""You are a helpful data science project expert. Use ONLY the information in the following project context to answer the user's question. If asked about data, respond using the 'DATA SUMMARY' section.
-
-PROJECT CONTEXT:
-{context}
-
-QUESTION:
-{user_q}
-
-ANSWER:
-"""
-            with st.spinner("Gemini is thinking..."):
-                try:
-                    model = genai.GenerativeModel("models/gemini-1.5-pro-002")
-                    response = model.generate_content(prompt)
-                    st.success(response.text)
-                except Exception as e:
-                    st.error(f"Gemini API error: {e}")
-else:
-    st.info("Please enter your Gemini API key to use the chatbot.")
 
